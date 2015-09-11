@@ -4,12 +4,12 @@ use std::str::Split;
 
 pub struct Command<'a> {
     command: &'a str,
-    exec: Box<Fn(Vec<&str>)>,
-    complete: Option<Box<Fn(Vec<&str>)>>
+    exec: Box<FnMut(Vec<&str>) + 'a>,
+    complete: Option<Box<FnMut(Vec<&str>) + 'a>>
 }
 
 impl<'a> Command<'a> {
-    fn new<T: Fn(Vec<&str>) + 'static, U: Fn(Vec<&str>) + 'static>(cmd: &'a str, exec_handler: T, complete_handler: Option<U>) -> Command {
+    fn new<T: FnMut(Vec<&str>) + 'a, U: FnMut(Vec<&str>) + 'a>(cmd: &'a str, exec_handler: T, complete_handler: Option<U>) -> Command<'a> {
         let mut obj = Command {
             command: cmd,
             exec: Box::new(exec_handler),
@@ -36,8 +36,7 @@ impl<'a> Cli<'a>{
         }
     }
 
-    fn register<T: Fn(Vec<&str>) + 'static>(&mut self, cmd: &'a str, exec: T) -> Result<(), Command> {
-
+    fn register<T: FnMut(Vec<&str>) + 'a>(&mut self, cmd: &'a str, exec: T) -> Result<(), Command> {
         let tmp = Command { 
             command: cmd,
             exec: Box::new(exec),
@@ -54,10 +53,10 @@ impl<'a> Cli<'a>{
         Vec::new()
     }
 
-    fn exec(&self, cmd: &str) {
-        if let Some(command) = self.commands.get(cmd) {
+    fn exec(&mut self, cmd: &str) {
+        if let Some(command) = self.commands.get_mut(cmd) {
             //TODO: figure out why I can't do that in one line
-            let ref x = command.exec;
+            let ref mut x = command.exec;
             x(vec!["blah"]);
         }
     }
@@ -69,12 +68,12 @@ mod tests {
 
     #[test]
     fn testRegister() {
-        let mut cli = Cli::new();
         let mut called = false;
-
-        cli.register("my first command", | args | { println!("called"); } );
-        cli.exec("my first command");
-
+        {
+            let mut cli = Cli::new();
+            cli.register("my first command", | args | { called=true } );
+            cli.exec("my first command");
+        }
         assert!(called == true)
     }
 }
