@@ -50,7 +50,11 @@ impl<'a> Cli<'a>{
     }
 
     fn complete(&self, argv: &str) -> Vec<&str> {
-        Vec::new()
+        println!("complete for '{}'", argv.trim());
+        self.commands.keys()
+            .filter(|cmd| cmd.starts_with(argv.trim()))
+            .cloned()
+            .collect()
     }
 
     fn exec(&mut self, cmd: &str) {
@@ -67,7 +71,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn testRegister() {
+    fn test_register_and_execute() {
         let mut called = false;
         {
             let mut cli = Cli::new();
@@ -75,6 +79,33 @@ mod tests {
             cli.exec("my first command");
         }
         assert!(called == true)
+    }
+    
+    #[test]
+    fn test_complete_empty_str() {
+        let mut cli = Cli::new();
+        cli.register("foo", | args | { } );
+        cli.register("bar", | args | { } );
+        assert!(vec!["foo", "bar"] == cli.complete(""))
+    }
+
+    #[test]
+    fn test_complete_partial() {
+        let mut cli = Cli::new();
+        cli.register("foo", | args | { } );
+        assert!(vec!["foo"] == cli.complete("f"));
+        assert!(vec!["foo"] == cli.complete("fo"));
+        assert!(vec!["foo"] == cli.complete("foo"));
+    }
+    
+    #[test]
+    fn test_complete_composite() {
+        let mut cli = Cli::new();
+        cli.register("foo bar", | args | { } );
+        assert!(vec!["foo bar"] == cli.complete("f"));
+        assert!(vec!["foo bar"] == cli.complete("foo"));
+        assert!(vec!["foo bar"] == cli.complete("foo "));
+        assert!(vec!["foo bar"] == cli.complete("foo b"));
     }
 }
 
@@ -134,22 +165,22 @@ mod tests {
     //}
 //}
 
-//fn foo() {
+fn foo(argv: Vec<&str>) {
 
-//}
+}
 
 fn main() {
-    //let mut cli = Cli::new(Some(Box::new(foo)));
+    let mut cli = Cli::new();
 
-    //cli.register(vec!["show", "stuff"], foo);
-    //cli.register(vec!["show", "other"], foo);
-    //cli.register(vec!["list", "other", "cool"], foo);
-    //cli.register(vec!["list", "other", "uncool"], foo);
+    cli.register("show stuff", foo);
+    cli.register("show other", foo);
+    cli.register("list other cool", foo);
+    cli.register("list other uncool", foo);
 
-    //loop {
-        //let mut line = String::new();
-        //std::io::stdin().read_line(&mut line).unwrap();
+    loop {
+        let mut line = String::new();
+        std::io::stdin().read_line(&mut line).unwrap();
 
-        //println!("got: {:?}", cli.suggest(&line));
-    //}
+        println!("got: {:?}", cli.complete(&line));
+    }
 }
