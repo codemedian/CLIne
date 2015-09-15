@@ -2,10 +2,11 @@ use std::collections::HashMap;
 use std::rc::Rc;
 use std::str::SplitWhitespace;
 use std::slice::Iter;
+use std::cell::RefCell;
 
 pub struct Command<'a> {
     command: Vec<&'a str>,
-    exec: Box<FnMut(Vec<&str>) + 'a>,
+    exec: Box<RefCell<FnMut(Vec<&str>) + 'a>>,
     complete: Option<Box<FnMut(Vec<&str>) + 'a>>
 }
 
@@ -13,7 +14,7 @@ impl<'a> Command<'a> {
     fn new<T: FnMut(Vec<&str>) + 'a, U: FnMut(Vec<&str>) + 'a>(cmd: Vec<&'a str>, exec_handler: T, complete_handler: Option<U>) -> Command<'a> {
         let mut obj = Command {
             command: cmd,
-            exec: Box::new(exec_handler),
+            exec: Box::new(RefCell::new(exec_handler)),
             complete: None
         };
 
@@ -105,14 +106,6 @@ impl<'a> Cli<'a>{
     fn exec(&mut self, cmd: &str) {
         let portions = cmd.trim().split_whitespace();
         self._exec(portions);
-        //if let Some(command) = self.commands.get_mut(cmd) {
-            ////TODO: figure out why I can't do that in one line
-            ////let ref mut x = command.exec;
-            ////x(vec!["blah"]);
-            //println!("found cmd");
-        //} else {
-            //println!(" not found cmd");
-        //}
     }
 
     fn _exec(&mut self, mut portions: SplitWhitespace) {
@@ -120,15 +113,15 @@ impl<'a> Cli<'a>{
             if let Some(cmd) = self.commands.get_mut(portion) {
                 cmd._exec(portions);
             } else {
-                match self.handler {
-                    Some(ref x) => println!("handler for {:?}", x.command),
-                    None => println!("no handler")
+                if let Some(ref mut cb) = self.handler {
+                    println!("handler for {:?}", cb.command);
+                    (&mut *cb.exec.borrow_mut())(portions.collect());
                 }
             }
         } else {
-            match self.handler {
-                Some(ref x) => println!("handler for {:?}", x.command),
-                None => println!("no handler")
+            if let Some(ref mut cb) = self.handler {
+                println!("handler for {:?}", x.command);
+                (&mut *cb.exec.borrow_mut())(portions.collect());
             }
         }
     }
@@ -149,32 +142,32 @@ mod tests {
         assert!(called == true)
     }
     
-    //#[test]
-    //fn test_complete_empty_str() {
-        //let mut cli = Cli::new();
-        //cli.register(vec!["foo"], | args | { } );
-        //cli.register(vec!["bar"], | args | { } );
-        //assert!(vec!["foo", "bar"] == cli.complete(""))
-    //}
+    #[test]
+    fn test_complete_empty_str() {
+        let mut cli = Cli::new();
+        cli.register(vec!["foo"], | args | { } );
+        cli.register(vec!["bar"], | args | { } );
+        assert!(vec!["foo", "bar"] == cli.complete(""))
+    }
 
-    //#[test]
-    //fn test_complete_partial() {
-        //let mut cli = Cli::new();
-        //cli.register(vec!["foo"], | args | { } );
-        //assert!(vec!["foo"] == cli.complete("f"));
-        //assert!(vec!["foo"] == cli.complete("fo"));
-        //assert!(vec!["foo"] == cli.complete("foo"));
-    //}
+    #[test]
+    fn test_complete_partial() {
+        let mut cli = Cli::new();
+        cli.register(vec!["foo"], | args | { } );
+        assert!(vec!["foo"] == cli.complete("f"));
+        assert!(vec!["foo"] == cli.complete("fo"));
+        assert!(vec!["foo"] == cli.complete("foo"));
+    }
     
-    //#[test]
-    //fn test_complete_composite() {
-        //let mut cli = Cli::new();
-        //cli.register(vec!["foo", "bar"], | args | { } );
-        //assert!(vec!["foo", "bar"] == cli.complete("f"));
-        //assert!(vec!["foo", "bar"] == cli.complete("foo"));
-        //assert!(vec!["foo", "bar"] == cli.complete("foo "));
-        //assert!(vec!["foo", "bar"] == cli.complete("foo b"));
-    //}
+    #[test]
+    fn test_complete_composite() {
+        let mut cli = Cli::new();
+        cli.register(vec!["foo", "bar"], | args | { } );
+        assert!(vec!["foo", "bar"] == cli.complete("f"));
+        assert!(vec!["foo", "bar"] == cli.complete("foo"));
+        assert!(vec!["foo", "bar"] == cli.complete("foo "));
+        assert!(vec!["foo", "bar"] == cli.complete("foo b"));
+    }
 }
 
 fn foo(argv: Vec<&str>) {
