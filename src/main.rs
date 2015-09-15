@@ -1,6 +1,5 @@
-use std::io::Read;
 use std::collections::HashMap;
-use std::str::Split;
+use std::str::SplitWhitespace;
 use std::slice::Iter;
 
 pub struct Command<'a> {
@@ -26,7 +25,7 @@ impl<'a> Command<'a> {
 }
 
 pub struct Cli<'a> {
-    commands: HashMap<&'a str, Option<Cli<'a>>>,
+    commands: HashMap<&'a str, Cli<'a>>,
     handler: Option<Command<'a>>
 }
 
@@ -39,41 +38,101 @@ impl<'a> Cli<'a>{
         }
     }
 
-    fn register<T: FnMut(Vec<&str>) + 'a>(&mut self, cmd: Vec<&'a str>, exec: T) -> Result<(), Command> {
+    fn register<T: FnMut(Vec<&str>) + 'a>(&mut self, cmd: Vec<&'a str>, exec: T) -> Result<(), ()> {
+        //let tmp = Command::new(cmd, exec, None);
         let tmp = Command { 
             command: cmd.clone(),
             exec: Box::new(exec),
             complete: None
         };
 
-        self._register(cmd.iter(), tmp)
-    }
 
-    fn _register(&mut self, it: Iter<&'a str>, command: Command, parent: &mut Cli) -> Result<(), Command> {
-        let cli = Cli::new();
-
-        if let Some(portion) = it.next() {
-            if (!self.commands.contains_key(portion)) {
-                self.commands.insert(portion, Some(cli));
+        match self._register(cmd.iter(), &tmp) {
+            Ok(_) => Ok(()),
+            Err(_) => {
+                //this only happens if we register "Vec::new()" ... probably disallow that at all
+                self.handler = Some(tmp);
+                Err(())
             }
         }
-        Ok(())
+    }
+
+    fn _register(&mut self, mut it: Iter<&'a str>, command: &Command) -> Result<(), ()> {
+        if let Some(portion) = it.next() {
+            let current:Vec<&str> = self.commands.keys().cloned().collect();
+
+            if !self.commands.contains_key(portion) {
+                let mut cli = Cli::new();
+                cli._register(it, command);
+                self.commands.insert(portion, cli);
+            } else {
+                if let Some(cmd) = self.commands.get_mut(portion) {
+                    //TODO: register handler if we get an error
+                    cmd._register(it, command);
+                }
+            };
+            Ok(())
+        } else {
+            Err(())
+        }
     }
 
     fn complete(&self, argv: &str) -> Vec<&str> {
         println!("complete for '{}'", argv.trim());
-        self.commands.keys()
-            .filter(|cmd| cmd.starts_with(argv.trim()))
-            .cloned()
-            .collect()
+        let mut portions = argv.trim().split_whitespace();
+
+        match self._complete(portions) {
+            Ok(ret) => ret,
+            Err(_) => Vec::new()
+        }
+    }
+
+    fn _complete(&self, mut portions: SplitWhitespace) -> Result<Vec<&str>, ()> {
+        if let Some(ref portion) = portions.next() {
+            if let Some(ref cmd) = self.commands.get(portion) {
+                cmd._complete(portions)
+            } else {
+                Ok(self.commands.keys()
+                    .filter(|cmd| cmd.starts_with(portion))
+                    .cloned()
+                    .collect())
+            }
+        } else {
+            Ok(self.commands.keys()
+                .cloned()
+                .collect())
+        }
     }
 
     fn exec(&mut self, cmd: &str) {
+        let mut portions = cmd.trim().split_whitespace();
+        self._exec(portions);
         //if let Some(command) = self.commands.get_mut(cmd) {
-            //TODO: figure out why I can't do that in one line
-            //let ref mut x = command.exec;
-            //x(vec!["blah"]);
+            ////TODO: figure out why I can't do that in one line
+            ////let ref mut x = command.exec;
+            ////x(vec!["blah"]);
+            //println!("found cmd");
+        //} else {
+            //println!(" not found cmd");
         //}
+    }
+
+    fn _exec(&mut self, mut portions: SplitWhitespace) {
+        if let Some(portion) = portions.next() {
+            if let Some(cmd) = self.commands.get_mut(portion) {
+                cmd._exec(portions);
+            } else {
+                match self.handler {
+                    Some(ref x) => println!("handler for {:?}", x.command),
+                    None => println!("no handler")
+                }
+            }
+        } else {
+            match self.handler {
+                Some(ref x) => println!("handler for {:?}", x.command),
+                None => println!("no handler")
+            }
+        }
     }
 }
 
@@ -120,62 +179,6 @@ mod tests {
     }
 }
 
-    //fn new(callback: Option<Box<Fn()>>) -> Cli<'a> {
-        //Cli {
-            //commands: HashMap::new(),
-            //exec: callback,
-            //complete_cb: None,
-        //}
-    //}
-
-    //fn register<T: Fn() + 'static>(&mut self, command: Vec<&'a str>, callback: T) {
-        //let mut it = command.iter();
-        //self._register(it, callback);
-    //}
-
-    //fn _register<T: Fn() + 'static>(&mut self, mut it: std::slice::Iter<&'a str>, callback: T) {
-        //if let Some(portion) = it.next() {
-            //if !self.commands.contains_key(portion) {
-                //self.commands.insert(portion, Cli::new(Some(Box::new(callback))));
-            //}
-
-            //self.commands.get_mut(portion).unwrap()._register(it, callback);
-        //}
-    //}
-
-    //fn suggest(&mut self, command: &str) -> Vec<&str> {
-        //let mut portions = command.trim().split(" ");
-        //let mut suggestions = self._suggest(&mut portions);
-        //if let Some(ref cb) = self.complete_cb {
-            //cb();
-            //println!("got callback");
-        //}
-        //suggestions
-    //}
-
-    //fn _suggest(&self, portions: &mut std::str::Split<&str>) -> Vec<&str> {
-        //let mut ret = Vec::with_capacity(self.commands.len());
-       
-        //if let Some(portion) = portions.next() {
-            //if !portion.is_empty() {
-                //if let Some(cmd) = self.commands.get(portion) {
-                    //ret = cmd._suggest(portions);
-                //}
-            //} else {
-                //for key in self.commands.keys() {
-                    //ret.push(*key);
-                //}
-            //}
-        //} else {
-            //for key in self.commands.keys() {
-                //ret.push(*key);
-            //}
-        //}
-
-        //ret
-    //}
-//}
-
 fn foo(argv: Vec<&str>) {
 
 }
@@ -185,8 +188,9 @@ fn main() {
 
     cli.register(vec!["show", "stuff"], foo);
     cli.register(vec!["show", "other"], foo);
-    cli.register(vec!["list", "other cool"], foo);
-    cli.register(vec!["list", "other uncool"], foo);
+    cli.register(vec!["some", "other"], foo);
+    cli.register(vec!["list", "other", "cool"], foo);
+    cli.register(vec!["list", "other", "uncool"], foo);
 
     loop {
         let mut line = String::new();
