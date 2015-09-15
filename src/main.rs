@@ -120,7 +120,7 @@ impl<'a> Cli<'a>{
             }
         } else {
             if let Some(ref mut cb) = self.handler {
-                println!("handler for {:?}", x.command);
+                println!("handler for {:?}", cb.command);
                 (&mut *cb.exec.borrow_mut())(portions.collect());
             }
         }
