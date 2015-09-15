@@ -78,7 +78,7 @@ impl<'a> Cli<'a>{
 
     fn complete(&self, argv: &str) -> Vec<&str> {
         println!("complete for '{}'", argv.trim());
-        let mut portions = argv.trim().split_whitespace();
+        let portions = argv.trim().split_whitespace();
 
         match self._complete(portions) {
             Ok(ret) => ret,
@@ -136,42 +136,43 @@ mod tests {
         let mut called = false;
         {
             let mut cli = Cli::new();
-            cli.register(vec!["foo bar"], | args | { called=true } );
+            cli.register(vec!["foo", "bar"], | _ | { called=true } ).ok();
             cli.exec("foo bar");
         }
         assert!(called == true)
     }
     
     #[test]
-    fn test_complete_empty_str() {
+    fn test_complete_empty_single_cmd() {
         let mut cli = Cli::new();
-        cli.register(vec!["foo"], | args | { } );
-        cli.register(vec!["bar"], | args | { } );
-        assert!(vec!["foo", "bar"] == cli.complete(""))
+        cli.register(vec!["foo"], | _ | { } ).ok();
+        assert!(vec!["foo"] == cli.complete(""));
+        assert!(vec!["foo"] == cli.complete("f"));
+        //assert!(vec!["foo"] == cli.complete("foo"));
     }
 
     #[test]
-    fn test_complete_partial() {
+    fn test_complete_multi_cmd() {
         let mut cli = Cli::new();
-        cli.register(vec!["foo"], | args | { } );
+        cli.register(vec!["foo", "bar"], | _| { } ).ok();
         assert!(vec!["foo"] == cli.complete("f"));
-        assert!(vec!["foo"] == cli.complete("fo"));
-        assert!(vec!["foo"] == cli.complete("foo"));
+        assert!(vec!["bar"] == cli.complete("foo"));
+        assert!(vec!["bar"] == cli.complete("foo b"));
     }
     
-    #[test]
-    fn test_complete_composite() {
-        let mut cli = Cli::new();
-        cli.register(vec!["foo", "bar"], | args | { } );
-        assert!(vec!["foo", "bar"] == cli.complete("f"));
-        assert!(vec!["foo", "bar"] == cli.complete("foo"));
-        assert!(vec!["foo", "bar"] == cli.complete("foo "));
-        assert!(vec!["foo", "bar"] == cli.complete("foo b"));
-    }
+    //#[test]
+    //fn test_complete_composite() {
+        //let mut cli = Cli::new();
+        //cli.register(vec!["foo", "bar"], | args | { } );
+        //assert!(vec!["foo", "bar"] == cli.complete("f"));
+        //assert!(vec!["foo", "bar"] == cli.complete("foo"));
+        //assert!(vec!["foo", "bar"] == cli.complete("foo "));
+        //assert!(vec!["foo", "bar"] == cli.complete("foo b"));
+    //}
 }
 
 fn foo(argv: Vec<&str>) {
-
+    println!("--> {:?}", argv);
 }
 
 fn main() {
@@ -187,7 +188,7 @@ fn main() {
         let mut line = String::new();
         std::io::stdin().read_line(&mut line).unwrap();
 
-        //println!("got: {:?}", cli.complete(&line));
-        cli.exec(&line);
+        println!("got: {:?}", cli.complete(&line));
+        //cli.exec(&line);
     }
 }
