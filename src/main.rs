@@ -55,8 +55,6 @@ impl<'a> Cli<'a>{
 
     fn _register(&mut self, mut it: Iter<&'a str>, command: Rc<Command<'a>>) -> Result<(), ()> {
         if let Some(portion) = it.next() {
-            let current:Vec<&str> = self.commands.keys().cloned().collect();
-
             if !self.commands.contains_key(portion) {
                 let mut cli = Cli::new();
                 if let Err(_) = cli._register(it, command.clone()) {
@@ -104,24 +102,25 @@ impl<'a> Cli<'a>{
     }
 
     fn exec(&mut self, cmd: &str) {
+        let argv:Vec<&str> = cmd.clone().split_whitespace().collect();
         let portions = cmd.trim().split_whitespace();
-        self._exec(portions);
+        self._exec(portions, argv);
     }
 
-    fn _exec(&mut self, mut portions: SplitWhitespace) {
+    fn _exec(&mut self, mut portions: SplitWhitespace, argv: Vec<&str>) {
         if let Some(portion) = portions.next() {
             if let Some(cmd) = self.commands.get_mut(portion) {
-                cmd._exec(portions);
+                cmd._exec(portions, argv);
             } else {
                 if let Some(ref mut cb) = self.handler {
                     println!("handler for {:?}", cb.command);
-                    (&mut *cb.exec.borrow_mut())(portions.collect());
+                    (&mut *cb.exec.borrow_mut())(argv);
                 }
             }
         } else {
             if let Some(ref mut cb) = self.handler {
                 println!("handler for {:?}", cb.command);
-                (&mut *cb.exec.borrow_mut())(portions.collect());
+                (&mut *cb.exec.borrow_mut())(argv);
             }
         }
     }
@@ -148,7 +147,9 @@ mod tests {
         cli.register(vec!["foo"], | _ | { } ).ok();
         assert!(vec!["foo"] == cli.complete(""));
         assert!(vec!["foo"] == cli.complete("f"));
-        //assert!(vec!["foo"] == cli.complete("foo"));
+        assert!(vec!["foo"] == cli.complete("  f"));
+        assert!(vec!["foo"] == cli.complete("f   "));  //TODO: this is a bit weird - probably shouldn't happen
+        assert!(cli.complete("foo").is_empty());
     }
 
     #[test]
@@ -160,15 +161,19 @@ mod tests {
         assert!(vec!["bar"] == cli.complete("foo b"));
     }
     
-    //#[test]
-    //fn test_complete_composite() {
-        //let mut cli = Cli::new();
-        //cli.register(vec!["foo", "bar"], | args | { } );
-        //assert!(vec!["foo", "bar"] == cli.complete("f"));
-        //assert!(vec!["foo", "bar"] == cli.complete("foo"));
-        //assert!(vec!["foo", "bar"] == cli.complete("foo "));
-        //assert!(vec!["foo", "bar"] == cli.complete("foo b"));
-    //}
+    #[test]
+    fn test_register_and_execute_with_arguments() {
+        let mut called = false;
+        {
+            let mut cli = Cli::new();
+            cli.register(vec!["foo"], | args | { 
+                called=true; 
+                assert!(vec!["foo", "bar", "baz"] == args);
+            } ).ok();
+            cli.exec("foo bar baz");
+        }
+        assert!(called == true);
+    }
 }
 
 fn foo(argv: Vec<&str>) {
@@ -179,16 +184,16 @@ fn main() {
     let mut cli = Cli::new();
 
     cli.register(vec!["show", "stuff"], foo).ok();
-    cli.register(vec!["show", "other"], foo).ok();
-    cli.register(vec!["some", "other"], foo).ok();
-    cli.register(vec!["list", "other", "cool"], foo).ok();
-    cli.register(vec!["list", "other", "uncool"], foo).ok();
+    //cli.register(vec!["show", "other"], foo).ok();
+    //cli.register(vec!["some", "other"], foo).ok();
+    //cli.register(vec!["list", "other", "cool"], foo).ok();
+    //cli.register(vec!["list", "other", "uncool"], foo).ok();
 
     loop {
         let mut line = String::new();
         std::io::stdin().read_line(&mut line).unwrap();
 
-        println!("got: {:?}", cli.complete(&line));
-        //cli.exec(&line);
+        //println!("got: {:?}", cli.complete(&line));
+        cli.exec(&line);
     }
 }
