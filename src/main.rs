@@ -16,7 +16,7 @@ impl<'a> Command<'a> {
         if let Some(cb) = complete_handler {
             complete_cb = Some(Box::new(RefCell::new(cb)));
         }
-    
+
         Command {
             command: cmd,
             exec: Box::new(RefCell::new(exec_handler)),
@@ -51,7 +51,7 @@ impl<'a> Cli<'a>{
             }
         }
     }
-    
+
     fn register_dyn_complete<T: FnMut(Vec<&str>) + 'a, U: FnMut(Vec<&str>) -> Vec<&str> + 'a>(&mut self, cmd: Vec<&'a str>, exec: T, complete: U) -> Result<(), ()> {
         let tmp = Rc::new(Command::new(cmd.clone(), exec, Some(complete)));
 
@@ -96,32 +96,34 @@ impl<'a> Cli<'a>{
         }
     }
 
-    fn _complete(&mut self, mut portions: SplitWhitespace<'a>) -> Result<Vec<&str>, ()> {
+    fn _complete(&mut self, mut portions: SplitWhitespace<'a>) -> Result<Vec<&'a str>, ()> {
+
         if let Some(ref portion) = portions.next() {
             if let Some(cmd) = self.commands.get_mut(portion) {
-                cmd._complete(portions)
-            } else {
-                if let Some(ref mut handler) = self.handler {
-                    if let Some(ref cb) = handler.complete {
-                        return Ok((&mut *cb.borrow_mut())(vec![""]))
-                    }
-                }
-                //Ok(self.commands.keys()
-                    //.filter(|cmd| cmd.starts_with(portion))
-                    //.cloned()
-                    //.collect())
-                    Ok(vec![""])
+                return cmd._complete(portions);
             }
-        } else {
+            
+            let mut ret:Vec<&str> = Vec::new();
             if let Some(ref mut handler) = self.handler {
                 if let Some(ref cb) = handler.complete {
-                    return Ok((&mut *cb.borrow_mut())(vec![""]))
+                    let mut args:Vec<&str> = Vec::new();
+                    args.push(portion);
+                    args.extend(portions);
+                    ret.extend((&mut *cb.borrow_mut())(args));
                 }
             }
-            //Ok(self.commands.keys()
-                //.cloned()
-                //.collect())
-            Ok(vec![""])
+            ret.extend(self.commands.keys()
+                .filter(|cmd| cmd.starts_with(portion)));
+            return Ok(ret);
+        } else {
+            let mut ret:Vec<&str> = Vec::new();
+            if let Some(ref mut handler) = self.handler {
+                if let Some(ref cb) = handler.complete {
+                    ret.extend((&mut *cb.borrow_mut())(vec![""]).iter());
+                }
+            }
+            ret.extend(self.commands.keys());
+            return Ok(ret)
         }
     }
 
@@ -164,7 +166,7 @@ mod tests {
         //}
         //assert!(called == true)
     //}
-    
+
     //#[test]
     //fn test_register_and_execute_multiple_times() {
         //let mut called = 0u8;
@@ -176,7 +178,7 @@ mod tests {
         //}
         //assert!(called == 2)
     //}
-    
+
     //#[test]
     //fn test_complete_empty_single_cmd() {
         //let mut cli = Cli::new();
@@ -187,16 +189,16 @@ mod tests {
         ////assert!(vec![""] == cli.complete("f   "));  //FIXME: this test should pass
         //assert!(cli.complete("foo").is_empty());
     //}
-    
+
     #[test]
     fn test_complete_with_dynamic() {
         let mut cli = Cli::new();
-        cli.register_dyn_complete(vec!["foo"], | _ | { }, | _ | { 
-            println!("called");
-            vec!["bar", "baz"] 
+        cli.register_dyn_complete(vec!["foo"], | _ | { }, | args | {
+            println!("called with {:?}", args);
+            vec!["bar", "baz"]
         }).ok();
-        assert!(vec!["foo"] == cli.complete("f"));
-        assert!(vec!["bar", "baz"] == cli.complete("foo"));
+        //assert!(vec!["foo"] == cli.complete("f"));
+        assert!(vec!["bar", "baz"] == cli.complete("foo a b"));
     }
 
     //#[test]
@@ -207,14 +209,14 @@ mod tests {
         //assert!(vec!["bar"] == cli.complete("foo"));
         //assert!(vec!["bar"] == cli.complete("foo b"));
     //}
-    
+
     //#[test]
     //fn test_register_and_execute_with_arguments() {
         //let mut called = false;
         //{
             //let mut cli = Cli::new();
-            //cli.register(vec!["foo"], | args | { 
-                //called=true; 
+            //cli.register(vec!["foo"], | args | {
+                //called=true;
                 //assert!(vec!["foo", "bar", "baz"] == args);
             //} ).ok();
             //cli.exec("foo bar baz");
