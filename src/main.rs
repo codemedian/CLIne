@@ -156,39 +156,39 @@ impl<'a> Cli<'a>{
 mod tests {
     use super::*;
 
-    //#[test]
-    //fn test_register_and_execute() {
-        //let mut called = false;
-        //{
-            //let mut cli = Cli::new();
-            //cli.register(vec!["foo", "bar"], | _ | { called=true }).ok();
-            //cli.exec("foo bar");
-        //}
-        //assert!(called == true)
-    //}
+    #[test]
+    fn test_register_and_execute() {
+        let mut called = false;
+        {
+            let mut cli = Cli::new();
+            cli.register(vec!["foo", "bar"], | _ | { called=true }).ok();
+            cli.exec("foo bar");
+        }
+        assert!(called == true)
+    }
 
-    //#[test]
-    //fn test_register_and_execute_multiple_times() {
-        //let mut called = 0u8;
-        //{
-            //let mut cli = Cli::new();
-            //cli.register(vec!["foo", "bar"], | _ | { called = called + 1} ).ok();
-            //cli.exec("foo bar");
-            //cli.exec("foo bar");
-        //}
-        //assert!(called == 2)
-    //}
+    #[test]
+    fn test_register_and_execute_multiple_times() {
+        let mut called = 0u8;
+        {
+            let mut cli = Cli::new();
+            cli.register(vec!["foo", "bar"], | _ | { called = called + 1} ).ok();
+            cli.exec("foo bar");
+            cli.exec("foo bar");
+        }
+        assert!(called == 2)
+    }
 
-    //#[test]
-    //fn test_complete_empty_single_cmd() {
-        //let mut cli = Cli::new();
-        //cli.register(vec!["foo"], | _ | { } ).ok();
-        //assert!(vec!["foo"] == cli.complete(""));
-        //assert!(vec!["foo"] == cli.complete("f"));
-        //assert!(vec!["foo"] == cli.complete("  f"));
-        ////assert!(vec![""] == cli.complete("f   "));  //FIXME: this test should pass
-        //assert!(cli.complete("foo").is_empty());
-    //}
+    #[test]
+    fn test_complete_empty_single_cmd() {
+        let mut cli = Cli::new();
+        cli.register(vec!["foo"], | _ | { } ).ok();
+        assert!(vec!["foo"] == cli.complete(""));
+        assert!(vec!["foo"] == cli.complete("f"));
+        assert!(vec!["foo"] == cli.complete("  f"));
+        //assert!(vec![""] == cli.complete("f   "));  //FIXME: this test should pass
+        assert!(cli.complete("foo").is_empty());
+    }
 
     #[test]
     fn test_complete_with_dynamic() {
@@ -197,32 +197,32 @@ mod tests {
             println!("called with {:?}", args);
             vec!["bar", "baz"]
         }).ok();
-        //assert!(vec!["foo"] == cli.complete("f"));
+        assert!(vec!["foo"] == cli.complete("f"));
         assert!(vec!["bar", "baz"] == cli.complete("foo a b"));
     }
 
-    //#[test]
-    //fn test_complete_multi_cmd() {
-        //let mut cli = Cli::new();
-        //cli.register(vec!["foo", "bar"], | _| { } ).ok();
-        //assert!(vec!["foo"] == cli.complete("f"));
-        //assert!(vec!["bar"] == cli.complete("foo"));
-        //assert!(vec!["bar"] == cli.complete("foo b"));
-    //}
+    #[test]
+    fn test_complete_multi_cmd() {
+        let mut cli = Cli::new();
+        cli.register(vec!["foo", "bar"], | _| { } ).ok();
+        assert!(vec!["foo"] == cli.complete("f"));
+        assert!(vec!["bar"] == cli.complete("foo"));
+        assert!(vec!["bar"] == cli.complete("foo b"));
+    }
 
-    //#[test]
-    //fn test_register_and_execute_with_arguments() {
-        //let mut called = false;
-        //{
-            //let mut cli = Cli::new();
-            //cli.register(vec!["foo"], | args | {
-                //called=true;
-                //assert!(vec!["foo", "bar", "baz"] == args);
-            //} ).ok();
-            //cli.exec("foo bar baz");
-        //}
-        //assert!(called == true);
-    //}
+    #[test]
+    fn test_register_and_execute_with_arguments() {
+        let mut called = false;
+        {
+            let mut cli = Cli::new();
+            cli.register(vec!["foo"], | args | {
+                called=true;
+                assert!(vec!["foo", "bar", "baz"] == args);
+            } ).ok();
+            cli.exec("foo bar baz");
+        }
+        assert!(called == true);
+    }
 }
 
 fn foo(argv: Vec<&str>) {
