@@ -10,7 +10,6 @@ pub struct Command<'a> {
     complete: Option<Box<RefCell<FnMut(Vec<&str>) -> Vec<&str> + 'a>>>
 }
 
-
 impl<'a> Command<'a> {
     fn new<T: FnMut(Vec<&str>) + 'a, U: FnMut(Vec<&str>) -> Vec<&str> + 'a>(cmd: Vec<&'a str>, exec_handler: T, complete_handler: Option<U>) -> Command<'a> {
         let mut complete_cb:Option<Box<RefCell<FnMut(Vec<&str>) -> Vec<&str>>>> = None;
@@ -88,7 +87,6 @@ impl<'a> Cli<'a>{
     }
 
     fn complete(&mut self, argv: &'a str) -> Vec<&str> {
-        println!("complete for '{}'", argv.trim());
         let portions = argv.trim().split_whitespace();
 
         match self._complete(portions) {
@@ -140,13 +138,11 @@ impl<'a> Cli<'a>{
                 cmd._exec(portions, argv);
             } else {
                 if let Some(ref mut cb) = self.handler {
-                    println!("handler for {:?}", cb.command);
                     (&mut *cb.exec.borrow_mut())(argv);
                 }
             }
         } else {
             if let Some(ref mut cb) = self.handler {
-                println!("handler for {:?}", cb.command);
                 (&mut *cb.exec.borrow_mut())(argv);
             }
         }
@@ -195,7 +191,6 @@ mod tests {
     fn test_complete_with_dynamic() {
         let mut cli = Cli::new();
         cli.register_dyn_complete(vec!["foo"], | _ | { }, | args | {
-            println!("called with {:?}", args);
             vec!["bar", "baz"]
         }).ok();
         assert!(vec!["foo"] == cli.complete("f"));
