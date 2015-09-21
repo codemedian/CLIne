@@ -32,14 +32,14 @@ pub struct Cli<'a> {
 
 impl<'a> Cli<'a>{
 
-    fn new() -> Cli<'a> {
+    pub fn new() -> Cli<'a> {
         Cli {
             commands: HashMap::new(),
             handler: None
         }
     }
 
-    fn register<T: FnMut(Vec<&str>) + 'a>(&mut self, cmd: Vec<&'a str>, exec: T) -> Result<(), ()> {
+    pub fn register<T: FnMut(Vec<&str>) + 'a>(&mut self, cmd: Vec<&'a str>, exec: T) -> Result<(), ()> {
         let tmp = Rc::new(Command::new(cmd.clone(), exec, None::<fn(Vec<&str>) -> Vec<&str>>));
 
         match self._register(cmd.iter(), tmp.clone()) {
@@ -86,7 +86,7 @@ impl<'a> Cli<'a>{
         }
     }
 
-    fn complete(&mut self, argv: &'a str) -> Vec<&str> {
+    pub fn complete<'b>(&mut self, argv: &'b str) -> Vec<&'a str> {
         let portions = argv.trim().split_whitespace();
 
         match self._complete(portions) {
@@ -95,10 +95,9 @@ impl<'a> Cli<'a>{
         }
     }
 
-    fn _complete(&mut self, mut portions: SplitWhitespace<'a>) -> Result<Vec<&'a str>, ()> {
-
+    fn _complete<'b>(&mut self, mut portions: SplitWhitespace<'b>) -> Result<Vec<&'a str>, ()> {
         if let Some(ref portion) = portions.next() {
-            if let Some(cmd) = self.commands.get_mut(portion) {
+            if let Some(cmd) = self.commands.get_mut(*portion) {
                 return cmd._complete(portions);
             }
             
@@ -106,9 +105,9 @@ impl<'a> Cli<'a>{
             if let Some(ref mut handler) = self.handler {
                 if let Some(ref cb) = handler.complete {
                     let mut args:Vec<&str> = Vec::new();
-                    args.push(portion);
-                    args.extend(portions);
-                    ret.extend((&mut *cb.borrow_mut())(args));
+                    //args.push(portion);
+                    //args.extend(portions);
+                    ret.extend((&mut *cb.borrow_mut())(args.clone()));
                 }
             }
             ret.extend(self.commands.keys()
@@ -126,15 +125,15 @@ impl<'a> Cli<'a>{
         }
     }
 
-    fn exec(&mut self, cmd: &'a str) {
-        let argv:Vec<&'a str> = cmd.clone().split_whitespace().collect();
+    pub fn exec<'b>(&mut self, cmd: &'b str) {
+        let argv:Vec<&str> = cmd.clone().split_whitespace().collect();
         let portions = cmd.trim().split_whitespace();
         self._exec(portions, argv);
     }
 
-    fn _exec(&mut self, mut portions: SplitWhitespace, argv: Vec<&str>) {
-        if let Some(portion) = portions.next() {
-            if let Some(cmd) = self.commands.get_mut(portion) {
+    fn _exec<'b>(&mut self, mut portions: SplitWhitespace<'b>, argv: Vec<&str>) {
+        if let Some(ref portion) = portions.next() {
+            if let Some(cmd) = self.commands.get_mut(*portion) {
                 cmd._exec(portions, argv);
             } else {
                 if let Some(ref mut cb) = self.handler {

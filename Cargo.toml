@@ -1,4 +1,7 @@
 [package]
-name = "CLine"
+name = "cline"
 version = "0.1.0"
 authors = ["Christoph Sitter <christoph.sitter@gmail.com>"]
+
+[dependencies]
+termios = "0.1.0"
