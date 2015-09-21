@@ -10,6 +10,7 @@ pub struct Command<'a> {
     complete: Option<Box<RefCell<FnMut(Vec<&str>) -> Vec<&str> + 'a>>>
 }
 
+
 impl<'a> Command<'a> {
     fn new<T: FnMut(Vec<&str>) + 'a, U: FnMut(Vec<&str>) -> Vec<&str> + 'a>(cmd: Vec<&'a str>, exec_handler: T, complete_handler: Option<U>) -> Command<'a> {
         let mut complete_cb:Option<Box<RefCell<FnMut(Vec<&str>) -> Vec<&str>>>> = None;
@@ -39,8 +40,8 @@ impl<'a> Cli<'a>{
         }
     }
 
-    fn register<T: FnMut(Vec<&str>) + 'a, U: FnMut(Vec<&str>) -> Vec<&str> + 'a>(&mut self, cmd: Vec<&'a str>, exec: T) -> Result<(), ()> {
-        let tmp = Rc::new(Command::new(cmd.clone(), exec, None::<U>));
+    fn register<T: FnMut(Vec<&str>) + 'a>(&mut self, cmd: Vec<&'a str>, exec: T) -> Result<(), ()> {
+        let tmp = Rc::new(Command::new(cmd.clone(), exec, None::<fn(Vec<&str>) -> Vec<&str>>));
 
         match self._register(cmd.iter(), tmp.clone()) {
             Ok(_) => Ok(()),
