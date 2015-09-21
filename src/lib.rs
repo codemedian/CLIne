@@ -7,12 +7,12 @@ use std::cell::RefCell;
 pub struct Command<'a> {
     command: Vec<&'a str>,
     exec: Box<RefCell<FnMut(Vec<&str>) + 'a>>,
-    complete: Option<Box<RefCell<FnMut(Vec<&str>) -> Vec<&str> + 'a>>>
+    complete: Option<Box<RefCell<for <'b> FnMut(Vec<&'b str>) -> Vec<&'a str> + 'a>>>
 }
 
 impl<'a> Command<'a> {
-    fn new<T: FnMut(Vec<&str>) + 'a, U: FnMut(Vec<&str>) -> Vec<&str> + 'a>(cmd: Vec<&'a str>, exec_handler: T, complete_handler: Option<U>) -> Command<'a> {
-        let mut complete_cb:Option<Box<RefCell<FnMut(Vec<&str>) -> Vec<&str>>>> = None;
+    fn new<T: FnMut(Vec<&str>) + 'a, U: for <'b> FnMut(Vec<&'b str>) -> Vec<&'a str> + 'a>(cmd: Vec<&'a str>, exec_handler: T, complete_handler: Option<U>) -> Command<'a> {
+        let mut complete_cb:Option<Box<RefCell<for <'b> FnMut(Vec<&'b str>) -> Vec<&'a str>>>> = None;
         if let Some(cb) = complete_handler {
             complete_cb = Some(Box::new(RefCell::new(cb)));
         }
@@ -40,7 +40,7 @@ impl<'a> Cli<'a>{
     }
 
     pub fn register<T: FnMut(Vec<&str>) + 'a>(&mut self, cmd: Vec<&'a str>, exec: T) -> Result<(), ()> {
-        let tmp = Rc::new(Command::new(cmd.clone(), exec, None::<fn(Vec<&str>) -> Vec<&str>>));
+        let tmp = Rc::new(Command::new(cmd.clone(), exec, None::<for <'b> fn(Vec<&'b str>) -> Vec<&'a str>>));
 
         match self._register(cmd.iter(), tmp.clone()) {
             Ok(_) => Ok(()),
@@ -52,7 +52,7 @@ impl<'a> Cli<'a>{
         }
     }
 
-    fn register_dyn_complete<T: FnMut(Vec<&str>) + 'a, U: FnMut(Vec<&str>) -> Vec<&str> + 'a>(&mut self, cmd: Vec<&'a str>, exec: T, complete: U) -> Result<(), ()> {
+    fn register_dyn_complete<T: FnMut(Vec<&str>) + 'a, U: for <'b> FnMut(Vec<&'b str>) -> Vec<&'a str> + 'a>(&mut self, cmd: Vec<&'a str>, exec: T, complete: U) -> Result<(), ()> {
         let tmp = Rc::new(Command::new(cmd.clone(), exec, Some(complete)));
 
         match self._register(cmd.iter(), tmp.clone()) {
@@ -105,8 +105,8 @@ impl<'a> Cli<'a>{
             if let Some(ref mut handler) = self.handler {
                 if let Some(ref cb) = handler.complete {
                     let mut args:Vec<&str> = Vec::new();
-                    //args.push(portion);
-                    //args.extend(portions);
+                    args.push(portion);
+                    args.extend(portions);
                     ret.extend((&mut *cb.borrow_mut())(args.clone()));
                 }
             }
