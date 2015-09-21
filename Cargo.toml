@@ -1,4 +1,4 @@
 [package]
-name = "clify"
+name = "CLine"
 version = "0.1.0"
 authors = ["Christoph Sitter <christoph.sitter@gmail.com>"]

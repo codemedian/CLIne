@@ -226,24 +226,3 @@ mod tests {
     }
 }
 
-fn foo(argv: Vec<&str>) {
-    println!("--> {:?}", argv);
-}
-
-fn main() {
-    let mut cli = Cli::new();
-
-    //cli.register(vec!["show", "stuff"], foo).ok();
-    //cli.register(vec!["show", "other"], foo).ok();
-    //cli.register(vec!["some", "other"], foo).ok();
-    //cli.register(vec!["list", "other", "cool"], foo).ok();
-    //cli.register(vec!["list", "other", "uncool"], foo).ok();
-
-    //loop {
-        //let mut line = String::new();
-        //std::io::stdin().read_line(&mut line).unwrap();
-
-        ////println!("got: {:?}", cli.complete(&line));
-        //cli.exec(&line);
-    //}
-}
