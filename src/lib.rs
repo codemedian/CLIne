@@ -131,6 +131,8 @@ impl<'a> Cli<'a>{
         self._exec(portions, argv);
     }
 
+
+    //TODO: don't wanna pass through argv - do it like complete
     fn _exec<'b>(&mut self, mut portions: SplitWhitespace<'b>, argv: Vec<&str>) {
         if let Some(ref portion) = portions.next() {
             if let Some(cmd) = self.commands.get_mut(*portion) {

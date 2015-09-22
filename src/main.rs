@@ -14,14 +14,21 @@ fn main() {
     let term_orig = termios;
 
     cli.register(vec!["show", "stuff"], | _ | { println!("wooo haaa") });
-    
-    termios.c_lflag = ECHONL;
-    //termios.c_lflag &= !(ICANON | IEXTEN | ISIG);
+    cli.register(vec!["show", "other"], | _ | { println!("wooo haaa") });
+    cli.register(vec!["foo", "bar"], | _ | { println!("wooo haaa") });
+    cli.register(vec!["exit"], | _ | { std::process::exit(0); });
+   
+
+
+    //termios.c_lflag = ECHONL;
+    termios.c_lflag &= !(ICANON | IEXTEN | ISIG);
     tcsetattr(0, TCSANOW, &termios);
     tcflush(0, TCIOFLUSH);
 
+    println!("-----> {:?}", term_orig);
+    print!(">> ");
+    io::stdout().flush();
     for byte in io::stdin().bytes() {
-        //println!("read {:?}", byte );
         let b = byte.unwrap();
         let mut command:String = String::new();
         if let Ok(string) = String::from_utf8(buf.clone()) {
@@ -32,34 +39,48 @@ fn main() {
         match b {
             3 => break,
             9 => {
+                let mut outbuf:String = String::new();
                 let res = cli.complete(&command);
-                match command.chars().last() {
-                    Some(' ') => {
-                        if res.len() > 0 {
-                            buf.extend(res[0].bytes());
-                            command.push_str(res[0]);
-                        }
-                    }
-                    _ => {
-                        command.clear();
-                        buf.extend(res[0].bytes());
-                        command.push_str(res[0]);
-                    }
+                
+                for suggestion in res.iter() {
+                    outbuf.push_str(suggestion);
+                    outbuf.push_str("  ");
                 }
 
-                print!("{}", command);
+                //TODO: meh...
+                match command.chars().last() {
+                    Some(' ') => {
+                        //if res.len() > 0 {
+                            //buf.extend(res[0].bytes());
+                            //command.push_str(res[0]);
+                        //}
+                    }
+                    _ => {
+                        if res.len() > 1 {
+                        } else if res.len() == 1 {
+                        } else {
+                            //nothing found
+                        }
+                    }
+                }
+       
+                println!("\n{}", outbuf);
+                print!(">> {}", command);
                 io::stdout().flush();
             }
             10 => {
                 println!("execute for: '{}'", command);
                 cli.exec(&command);
-                print!("{}", command);
+                command.clear();
+                buf.clear();
+                print!(">> ");
                 io::stdout().flush();
             }
             _ => {
                 buf.push(b);
             }
         }
+
 
 
     }
