@@ -1,10 +1,52 @@
+//! The `cline` crate provides an API that allows users to register CLI commands with an execute
+//! and dynamic suggest callback to help implementing command line clients that support auto
+//! completion of commands
+//!
+//! ## Getting started
+//! The cline API works by creating an instance of the struct [`Cli`](struct.Cli.html) and calling 
+//! [`register`](struct.Cli.html#method.register), [`execute`](struct.Cli.html#method.execute) or 
+//! [`complete`](struct.Cli.html#method.complete) on it
+//!
+//! Create a new [`Cli`](struct.Cli.html) object:
+//!
+//! ```
+//! # use cline::*;
+//! let mut cli = Cli::new();
+//! ```
+//!
+//! Register a function:
+//!
+//! ```
+//! # use cline::*;
+//! # let mut cli = Cli::new();
+//! cli.register(vec!["list", "files"], | args | { println!("called with: {:?}", args); });
+//! ```
+//!
+//! Get suggestions for autocompletion:
+//!
+//! ```
+//! # use cline::*;
+//! # let mut cli = Cli::new();
+//! cli.complete("l"); //returns vec!["list"]
+//! cli.complete("list"); //returns vec!["files"]
+//! ```
+//!
+//! Execute command aka call registered exec closure:
+//! 
+//! ```
+//! # use cline::*;
+//! # let mut cli = Cli::new();
+//! cli.exec("list files"); //calls the registered closure
+//! ```
+
 use std::collections::HashMap;
 use std::rc::Rc;
 use std::str::SplitWhitespace;
 use std::slice::Iter;
 use std::cell::RefCell;
 
-pub struct Command<'a> {
+
+struct Command<'a> {
     command: Vec<&'a str>,
     exec: Box<RefCell<FnMut(Vec<&str>) + 'a>>,
     complete: Option<Box<RefCell<for <'b> FnMut(Vec<&'b str>) -> Vec<&'a str> + 'a>>>
@@ -25,6 +67,7 @@ impl<'a> Command<'a> {
     }
 }
 
+/// Opaque struct holding the registered Commands
 pub struct Cli<'a> {
     commands: HashMap<&'a str, Cli<'a>>,
     handler: Option<Rc<Command<'a>>>
@@ -32,6 +75,9 @@ pub struct Cli<'a> {
 
 impl<'a> Cli<'a>{
 
+    /// Constructs a new `Cli<'a>` 
+    ///
+    /// This object holds all commands and callbacks registered with it
     pub fn new() -> Cli<'a> {
         Cli {
             commands: HashMap::new(),
@@ -39,6 +85,20 @@ impl<'a> Cli<'a>{
         }
     }
 
+    /// Registers a command with an exec callback
+    /// When multiple commands get registered with matching prefixes, then a call to `complete`
+    /// will return all "subcommands" available for the given input
+    ///
+    /// ```
+    /// # use cline::*;
+    /// # let mut cli = Cli::new();
+    /// cli.register(vec!["foo", "bar"], | args | { println!("called with: {:?}", args); });
+    /// // calling complete with "foo" would now return a Vec containing "bar"
+    ///
+    /// cli.register(vec!["foo", "baz"], | args | { println!("called with: {:?}", args); });
+    /// // calling complete with "foo" would now return a Vec containing "bar" and "baz"
+    /// ```
+    ///
     pub fn register<T: FnMut(Vec<&str>) + 'a>(&mut self, cmd: Vec<&'a str>, exec: T) -> Result<(), ()> {
         let tmp = Rc::new(Command::new(cmd.clone(), exec, None::<for <'b> fn(Vec<&'b str>) -> Vec<&'a str>>));
 
@@ -52,7 +112,20 @@ impl<'a> Cli<'a>{
         }
     }
 
-    fn register_dyn_complete<T: FnMut(Vec<&str>) + 'a, U: for <'b> FnMut(Vec<&'b str>) -> Vec<&'a str> + 'a>(&mut self, cmd: Vec<&'a str>, exec: T, complete: U) -> Result<(), ()> {
+    /// Registers a command with an exec callback and a dynamic complete callback
+    /// This comes in handy if the completion is based on data that can change at runtime like a
+    /// list of active sessions
+    ///
+    /// ```
+    /// # use cline::*;
+    /// # let mut cli = Cli::new();
+    /// cli.register_dyn_complete(vec!["foo"], 
+    ///     | args | { println!("called with: {:?}", args); },
+    ///     | args | { vec!["bar", "baz"] });
+    ///
+    /// cli.complete("foo"); // --> vec!["bar", "baz"]
+    /// ```
+    pub fn register_dyn_complete<T: FnMut(Vec<&str>) + 'a, U: for <'b> FnMut(Vec<&'b str>) -> Vec<&'a str> + 'a>(&mut self, cmd: Vec<&'a str>, exec: T, complete: U) -> Result<(), ()> {
         let tmp = Rc::new(Command::new(cmd.clone(), exec, Some(complete)));
 
         match self._register(cmd.iter(), tmp.clone()) {
@@ -86,6 +159,18 @@ impl<'a> Cli<'a>{
         }
     }
 
+    /// Returns a Vector with "subcommands" that can either complete the current work or follow the given input
+    /// for registered commands
+    ///
+    /// ```
+    /// # use cline::*;
+    /// # let mut cli = Cli::new();
+    /// cli.register(vec!["foo","bar"], | _ | {});
+    /// assert!(vec!["foo"] == cli.complete("f"));
+    /// assert!(vec!["bar"] == cli.complete("foo"));
+    ///
+    /// cli.register(vec!["foo","baz"], | _ | {}); // -> vec!["bar", "baz"]
+    /// ```
     pub fn complete<'b>(&mut self, argv: &'b str) -> Vec<&'a str> {
         let portions = argv.trim().split_whitespace();
 
@@ -125,6 +210,14 @@ impl<'a> Cli<'a>{
         }
     }
 
+    /// Calls the execute callback registered with a command specified by `cmd`
+    ///
+    /// ```
+    /// # use cline::*;
+    /// # let mut cli = Cli::new();
+    /// cli.register(vec!["foo"], | args | { println!("called with: {:?}", args); });
+    /// cli.exec("foo");
+    /// ```
     pub fn exec<'b>(&mut self, cmd: &'b str) {
         let argv:Vec<&str> = cmd.clone().split_whitespace().collect();
         let portions = cmd.trim().split_whitespace();

@@ -3,5 +3,11 @@ name = "cline"
 version = "0.1.0"
 authors = ["Christoph Sitter <christoph.sitter@gmail.com>"]
 
+[[bin]]
+name = "cline_test"
+test = false
+doc = false
+
+
 [dependencies]
 termios = "0.1.0"
