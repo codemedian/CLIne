@@ -242,6 +242,21 @@ impl<'a> Cli<'a>{
     }
 }
 
+/// Helper function that emulates linux terminal behaviour for command 
+/// completion based on the commands registered with the [`Cli`](struct.Cli.html) 
+/// struct passed to the function.
+/// Can be exited with Ctrl + c
+///
+/// ```ignore
+/// # use cline::{cli, cline_run};
+/// # let mut cli = Cli::new();
+/// cli.register(vec!["foo", "bar"], | _ | { println!("running foo bar") });
+/// cli.register(vec!["foo", "baz"], | _ | { println!("running foo baz") });
+///
+/// cline_run(&mut cli);
+/// ```
+/// # Note
+/// Current implementation only works on linux (`termios` based)
 #[cfg(unix)]
 pub fn cline_run(cli: &mut Cli) {
     unix::unix_cline_run(cli);
