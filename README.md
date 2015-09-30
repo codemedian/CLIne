@@ -7,15 +7,15 @@ The [`cline`](http://chsitter.github.io/CLIne/cline/) crate provides an API that
 ## Usage
 ``` rust
 extern crate cline;
+use cline::{Cli, cline_run};
 
 fn main() {
-  let mut cli = cline::Cli::new();
-  
-  cli.register(vec!["list", "files"], | args | { /* this gets called on execute */ });
-  
-  cli.complete("li"); // returns vec!["list"]
-  
-  cli.exec("list files"); 
+    let mut cli = Cli::new();
+
+    cli.register(vec!["foo", "bar"], | _ | { println!("running foo bar") });
+    cli.register(vec!["foo", "baz"], | _ | { println!("running foo baz") });
+
+    cline_run(&mut cli);
 }
 ```
 
