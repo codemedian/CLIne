@@ -3,8 +3,8 @@
 //! completion of commands
 //!
 //! ## Getting started
-//! The cline API works by creating an instance of the struct [`Cli`](struct.Cli.html) and calling 
-//! [`register`](struct.Cli.html#method.register), [`execute`](struct.Cli.html#method.execute) or 
+//! The cline API works by creating an instance of the struct [`Cli`](struct.Cli.html) and calling
+//! [`register`](struct.Cli.html#method.register), [`execute`](struct.Cli.html#method.execute) or
 //! [`complete`](struct.Cli.html#method.complete) on it
 //!
 //! Create a new [`Cli`](struct.Cli.html) object:
@@ -32,7 +32,7 @@
 //! ```
 //!
 //! Execute command aka call registered exec closure:
-//! 
+//!
 //! ```
 //! # use cline::*;
 //! # let mut cli = Cli::new();
@@ -44,7 +44,6 @@ use std::rc::Rc;
 use std::str::SplitWhitespace;
 use std::slice::Iter;
 use std::cell::RefCell;
-
 
 struct Command<'a> {
     command: Vec<&'a str>,
@@ -75,7 +74,7 @@ pub struct Cli<'a> {
 
 impl<'a> Cli<'a>{
 
-    /// Constructs a new `Cli<'a>` 
+    /// Constructs a new `Cli<'a>`
     ///
     /// This object holds all commands and callbacks registered with it
     pub fn new() -> Cli<'a> {
@@ -119,7 +118,7 @@ impl<'a> Cli<'a>{
     /// ```
     /// # use cline::*;
     /// # let mut cli = Cli::new();
-    /// cli.register_dyn_complete(vec!["foo"], 
+    /// cli.register_dyn_complete(vec!["foo"],
     ///     | args | { println!("called with: {:?}", args); },
     ///     | args | { vec!["bar", "baz"] });
     ///
@@ -185,7 +184,7 @@ impl<'a> Cli<'a>{
             if let Some(cmd) = self.commands.get_mut(*portion) {
                 return cmd._complete(portions);
             }
-            
+
             let mut ret:Vec<&str> = Vec::new();
             if let Some(ref mut handler) = self.handler {
                 if let Some(ref cb) = handler.complete {
@@ -243,9 +242,180 @@ impl<'a> Cli<'a>{
     }
 }
 
+#[cfg(unix)]
+pub fn cline_run(cli: &mut Cli) {
+    unix::unix_cline_run(cli);
+}
+#[cfg(windows)]
+pub fn cline_run(cli: &mut Cli) {
+    panic!("Not yet implemented");
+}
+
+#[derive(Debug)]
+pub enum Direction {
+    Up,
+    Down,
+    Left,
+    Right
+}
+
+#[derive(Debug)]
+pub enum Key {
+    Char(char),
+    Symbol(char),
+    Digit(u8),
+    Arrow(Direction),
+    Whitespace,
+    Backspace,
+    Del,
+    Tab,
+    Newline,
+    Etx
+}
+
+#[cfg(unix)]
+mod unix {
+    extern crate termios;
+
+    use std::io::{stdout, stdin, Bytes};
+    use std::io::prelude::*;
+    use self::termios::*;
+    use super::*;
+
+    fn read_key<T: Read>(bytes: &mut Bytes<T>) -> Option<Key> {
+        match bytes.next() {
+            Some(Ok(0x1B)) => { //Esc
+                match bytes.next() {
+                    Some(Ok(0x5b)) => { // [
+                        match bytes.next() {
+                            Some(Ok(0x41)) => { // A
+                                Some(Key::Arrow(Direction::Up))
+                            },
+                            Some(Ok(0x42)) => { // B
+                                Some(Key::Arrow(Direction::Down))
+                            },
+                            Some(Ok(0x43)) => { // C
+                                Some(Key::Arrow(Direction::Right))
+                            },
+                            Some(Ok(0x44)) => { // D
+                                Some(Key::Arrow(Direction::Left))
+                            },
+                            c @ _ => {
+                                println!("{} {} {}", 0x1B, 0x5b, c.unwrap().unwrap());
+                                None
+                            }
+                        }
+                    },
+                    c @ _ => {
+                        println!("{} {}", 0x1B, c.unwrap().unwrap());
+                        None
+                    }
+                }
+            },
+            Some(Ok(c)) if c >= 0x30 && c <= 0x39 => {
+                Some(Key::Digit(c - 0x30))
+            },
+            Some(Ok(c)) if (c >= 0x41 && c <= 0x5A) || (c >= 0x61 && c <= 0x7A) => {
+                Some(Key::Char(c as char))
+            },
+            Some(Ok(0x20)) => {
+                Some(Key::Whitespace)
+            },
+            Some(Ok(0x7f)) => {
+                Some(Key::Del)
+            },
+            Some(Ok(0x09)) => {
+                Some(Key::Tab)
+            },
+            Some(Ok(0x08)) => {
+                Some(Key::Backspace)
+            },
+            Some(Ok(0xA)) => {
+                Some(Key::Newline)
+            },
+            Some(Ok(0x3)) => {
+                Some(Key::Etx)
+            },
+            Some(Ok(c)) => {
+                println!("{:?}", c);
+                Some(Key::Symbol(c as char))
+            },
+            _ => {
+                None
+            }
+        }
+    }
+
+    pub fn unix_cline_run(cli: &mut Cli) {
+        let mut termios = Termios::from_fd(0).unwrap();
+        let term_orig = termios;
+        let mut input_iter = stdin().bytes();
+        let mut command = String::new();
+
+        termios.c_lflag &= !(ICANON | IEXTEN | ISIG | ECHO);
+        tcsetattr(0, TCSANOW, &termios);
+        tcflush(0, TCIOFLUSH);
+
+        print!(">> ");
+        stdout().flush();
+
+        loop {
+            match(read_key(&mut input_iter)) {
+                Some(key) => {
+                    match key {
+                        Key::Char(c) => {
+                            command.push(c);
+                            print!("{}", c);
+                            stdout().flush();
+                        },
+                        Key::Whitespace => {
+                            command.push(' ');
+                            print!(" ");
+                            stdout().flush();
+                        }
+                        Key::Del | Key::Backspace => {
+                            command.pop();
+                            print!("{} {}", 0x08 as char, 0x08 as char);
+                            stdout().flush();
+                        },
+                        Key::Tab => {
+                            let suggestions = cli.complete(&command);
+                            print!("{}", '\n');
+                            for cmd in suggestions.iter() {
+                                print!("{} ", cmd);
+                            }
+                            print!("\n>> {}", command);
+                            stdout().flush();
+                        },
+                        Key::Newline => {
+                            println!("");
+                            cli.exec(&command);
+                            command.clear();
+                            print!(">> ");
+                            stdout().flush();
+                        },
+                        Key::Etx => { //Ctrl + C
+                            println!("");
+                            break;
+                        }
+                        x @ _ => {
+                            println!("unhandled: {:?}", x);
+                        }
+                    }
+                },
+                None => {
+                    break;
+                }
+            }
+        }
+        tcsetattr(0, termios::TCSANOW, &term_orig);
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use super::Cli;
 
     #[test]
     fn test_register_and_execute() {
@@ -314,4 +484,3 @@ mod tests {
         assert!(called == true);
     }
 }
-
