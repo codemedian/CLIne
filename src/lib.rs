@@ -368,30 +368,30 @@ mod unix {
         let mut command = String::new();
 
         termios.c_lflag &= !(ICANON | IEXTEN | ISIG | ECHO);
-        tcsetattr(0, TCSANOW, &termios);
-        tcflush(0, TCIOFLUSH);
+        tcsetattr(0, TCSANOW, &termios).unwrap();
+        tcflush(0, TCIOFLUSH).unwrap();
 
         print!(">> ");
-        stdout().flush();
+        stdout().flush().unwrap();
 
         loop {
-            match(read_key(&mut input_iter)) {
+            match read_key(&mut input_iter) {
                 Some(key) => {
                     match key {
                         Key::Char(c) => {
                             command.push(c);
                             print!("{}", c);
-                            stdout().flush();
+                            stdout().flush().unwrap();
                         },
                         Key::Whitespace => {
                             command.push(' ');
                             print!(" ");
-                            stdout().flush();
+                            stdout().flush().unwrap();
                         }
                         Key::Del | Key::Backspace => {
                             command.pop();
                             print!("{} {}", 0x08 as char, 0x08 as char);
-                            stdout().flush();
+                            stdout().flush().unwrap();
                         },
                         Key::Tab => {
                             let suggestions = cli.complete(&command);
@@ -400,14 +400,14 @@ mod unix {
                                 print!("{} ", cmd);
                             }
                             print!("\n>> {}", command);
-                            stdout().flush();
+                            stdout().flush().unwrap();
                         },
                         Key::Newline => {
                             println!("");
                             cli.exec(&command);
                             command.clear();
                             print!(">> ");
-                            stdout().flush();
+                            stdout().flush().unwrap();
                         },
                         Key::Etx => { //Ctrl + C
                             println!("");
@@ -423,7 +423,7 @@ mod unix {
                 }
             }
         }
-        tcsetattr(0, termios::TCSANOW, &term_orig);
+        tcsetattr(0, termios::TCSANOW, &term_orig).unwrap();
     }
 }
 
@@ -468,7 +468,7 @@ mod tests {
     #[test]
     fn test_complete_with_dynamic() {
         let mut cli = Cli::new();
-        cli.register_dyn_complete(vec!["foo"], | _ | { }, | args | {
+        cli.register_dyn_complete(vec!["foo"], | _ | { }, | _ | {
             vec!["bar", "baz"]
         }).ok();
         assert!(vec!["foo"] == cli.complete("f"));
