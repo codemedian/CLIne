@@ -415,7 +415,6 @@ mod unix {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use super::Cli;
 
     #[test]
     fn test_register_and_execute() {
