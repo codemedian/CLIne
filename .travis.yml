@@ -7,8 +7,5 @@ matrix:
   allow_failures:
     - rust: nightly
 after_success:
-    - |
-        [$TRAVIS_PULL_REQUEST == "false"] && 
-        [$TRAVIS_BRANCH == "master"] && 
-        cargo publish --token $CARGO_TOKEN
+    - [$TRAVIS_PULL_REQUEST == "false"] && [$TRAVIS_BRANCH == "master"] && cargo publish --token $CARGO_TOKEN
 
