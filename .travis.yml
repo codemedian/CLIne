@@ -8,7 +8,7 @@ rust:
 - beta
 - nightly
 install:
-    - pip install pelican ghp-import
+    - pip install ghp-import
 matrix:
   allow_failures:
   - rust: nightly
