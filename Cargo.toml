@@ -2,6 +2,13 @@
 name = "cline"
 version = "0.1.0"
 authors = ["Christoph Sitter <christoph.sitter@gmail.com>"]
+description = "Lightweight library that allows bash-like completion of registered commands"
+documentation = "http://chsitter.github.io/CLIne/cline/"
+homepage = "http://chsitter.github.io/CLIne/cline/"
+repository = "http://chsitter.github.io/CLIne/cline/"
+readme = "README.md"
+license = "Apache-2.0"
+keywords = ["cli","commandline", "completion"]
 
 [[bin]]
 name = "cline_test"
