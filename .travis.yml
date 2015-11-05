@@ -7,13 +7,16 @@ rust:
 - stable
 - beta
 - nightly
-script:
-    - travis-cargo build && travis-cargo test && travis-cargo bench && travis-cargo --only stable doc
-before_script:
-    - pip install 'travis-cargo<0.2' --user && export PATH=$HOME/.local/bin:$PATH
+#script:
+    #- travis-cargo build &&
+      #travis-cargo test &&
+      #travis-cargo bench &&
+      #travis-cargo --only stable doc
+#before_script:
+    #- pip install 'travis-cargo<0.2' --user && export PATH=$HOME/.local/bin:$PATH
 matrix:
   allow_failures:
   - rust: nightly
-after_success:
-    - travis-cargo --only stable doc-upload
-    - test $TRAVIS_BRANCH = master && $TRAVIS_PULL_REQUEST = false && cargo publish --token ${CRATESIO_TOKEN}
+#after_success:
+    #- travis-cargo --only stable doc-upload
+    #- test $TRAVIS_BRANCH = master && $TRAVIS_PULL_REQUEST = false && cargo publish --token ${CRATESIO_TOKEN}
