@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `Cli` struct in crate `cline`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, Cli">
+
+    <title>cline::Cli - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../main.css">
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        
+        <p class='location'><a href='index.html'>cline</a></p><script>window.sidebarCurrent = {name: 'Cli', ty: 'struct', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content struct">
+<h1 class='fqn'><span class='in-band'>Struct <a href='index.html'>cline</a>::<wbr><a class='struct' href=''>Cli</a></span><span class='out-of-band'><span id='render-detail'>
+            <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                [<span class='inner'>&#x2212;</span>]
+            </a>
+        </span><a id='src-128' class='srclink' href='../src/cline/lib.rs.html#70-73' title='goto source code'>[src]</a></span></h1>
+<pre class='rust struct'>pub struct Cli&lt;'a&gt; {
+    // some fields omitted
+}</pre><div class='docblock'><p>Opaque struct holding the registered Commands</p>
+</div><h2 id='methods'>Methods</h2><h3 class='impl'><code>impl&lt;'a&gt; <a class='struct' href='../cline/struct.Cli.html' title='cline::Cli'>Cli</a>&lt;'a&gt;</code></h3><div class='impl-items'><h4 id='method.new' class='method'><code>fn <a href='#method.new' class='fnname'>new</a>() -&gt; <a class='struct' href='../cline/struct.Cli.html' title='cline::Cli'>Cli</a>&lt;'a&gt;</code></h4>
+<div class='docblock'><p>Constructs a new <code>Cli&lt;&#39;a&gt;</code></p>
+
+<p>This object holds all commands and callbacks registered with it</p>
+</div><h4 id='method.register' class='method'><code>fn <a href='#method.register' class='fnname'>register</a>&lt;T: <a class='trait' href='https://doc.rust-lang.org/nightly/core/ops/trait.FnMut.html' title='core::ops::FnMut'>FnMut</a>(<a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;&amp;<a href='https://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>&gt;) + 'a&gt;(&amp;mut self, cmd: <a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;&amp;'a <a href='https://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>&gt;, exec: T) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>, <a href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>&gt;</code></h4>
+<div class='docblock'><p>Registers a command with an exec callback
+When multiple commands get registered with matching prefixes, then a call to <code>complete</code>
+will return all &quot;subcommands&quot; available for the given input</p>
+<pre class='rust rust-example-rendered'>
+<span class='ident'>cli</span>.<span class='ident'>register</span>(<span class='macro'>vec</span><span class='macro'>!</span>[<span class='string'>&quot;foo&quot;</span>, <span class='string'>&quot;bar&quot;</span>], <span class='op'>|</span> <span class='ident'>args</span> <span class='op'>|</span> { <span class='macro'>println</span><span class='macro'>!</span>(<span class='string'>&quot;called with: {:?}&quot;</span>, <span class='ident'>args</span>); });
+<span class='comment'>// calling complete with &quot;foo&quot; would now return a Vec containing &quot;bar&quot;</span>
+
+<span class='ident'>cli</span>.<span class='ident'>register</span>(<span class='macro'>vec</span><span class='macro'>!</span>[<span class='string'>&quot;foo&quot;</span>, <span class='string'>&quot;baz&quot;</span>], <span class='op'>|</span> <span class='ident'>args</span> <span class='op'>|</span> { <span class='macro'>println</span><span class='macro'>!</span>(<span class='string'>&quot;called with: {:?}&quot;</span>, <span class='ident'>args</span>); });
+<span class='comment'>// calling complete with &quot;foo&quot; would now return a Vec containing &quot;bar&quot; and &quot;baz&quot;</span></pre>
+</div><h4 id='method.register_dyn_complete' class='method'><code>fn <a href='#method.register_dyn_complete' class='fnname'>register_dyn_complete</a>&lt;T: <a class='trait' href='https://doc.rust-lang.org/nightly/core/ops/trait.FnMut.html' title='core::ops::FnMut'>FnMut</a>(<a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;&amp;<a href='https://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>&gt;) + 'a, U: for&lt;'b&gt; <a class='trait' href='https://doc.rust-lang.org/nightly/core/ops/trait.FnMut.html' title='core::ops::FnMut'>FnMut</a>(<a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;&amp;'b <a href='https://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>&gt;) -&gt; <a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;&amp;'a <a href='https://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>&gt; + 'a&gt;(&amp;mut self, cmd: <a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;&amp;'a <a href='https://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>&gt;, exec: T, complete: U) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>, <a href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>&gt;</code></h4>
+<div class='docblock'><p>Registers a command with an exec callback and a dynamic complete callback
+This comes in handy if the completion is based on data that can change at runtime like a
+list of active sessions</p>
+<pre class='rust rust-example-rendered'>
+<span class='ident'>cli</span>.<span class='ident'>register_dyn_complete</span>(<span class='macro'>vec</span><span class='macro'>!</span>[<span class='string'>&quot;foo&quot;</span>],
+    <span class='op'>|</span> <span class='ident'>args</span> <span class='op'>|</span> { <span class='macro'>println</span><span class='macro'>!</span>(<span class='string'>&quot;called with: {:?}&quot;</span>, <span class='ident'>args</span>); },
+    <span class='op'>|</span> <span class='ident'>args</span> <span class='op'>|</span> { <span class='macro'>vec</span><span class='macro'>!</span>[<span class='string'>&quot;bar&quot;</span>, <span class='string'>&quot;baz&quot;</span>] });
+
+<span class='ident'>cli</span>.<span class='ident'>complete</span>(<span class='string'>&quot;foo&quot;</span>); <span class='comment'>// --&gt; vec![&quot;bar&quot;, &quot;baz&quot;]</span></pre>
+</div><h4 id='method.complete' class='method'><code>fn <a href='#method.complete' class='fnname'>complete</a>&lt;'b&gt;(&amp;mut self, argv: &amp;'b <a href='https://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>) -&gt; <a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;&amp;'a <a href='https://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>&gt;</code></h4>
+<div class='docblock'><p>Returns a Vector with &quot;subcommands&quot; that can either complete the current work or follow the given input
+for registered commands</p>
+<pre class='rust rust-example-rendered'>
+<span class='ident'>cli</span>.<span class='ident'>register</span>(<span class='macro'>vec</span><span class='macro'>!</span>[<span class='string'>&quot;foo&quot;</span>,<span class='string'>&quot;bar&quot;</span>], <span class='op'>|</span> _ <span class='op'>|</span> {});
+<span class='macro'>assert</span><span class='macro'>!</span>(<span class='macro'>vec</span><span class='macro'>!</span>[<span class='string'>&quot;foo&quot;</span>] <span class='op'>==</span> <span class='ident'>cli</span>.<span class='ident'>complete</span>(<span class='string'>&quot;f&quot;</span>));
+<span class='macro'>assert</span><span class='macro'>!</span>(<span class='macro'>vec</span><span class='macro'>!</span>[<span class='string'>&quot;bar&quot;</span>] <span class='op'>==</span> <span class='ident'>cli</span>.<span class='ident'>complete</span>(<span class='string'>&quot;foo&quot;</span>));
+
+<span class='ident'>cli</span>.<span class='ident'>register</span>(<span class='macro'>vec</span><span class='macro'>!</span>[<span class='string'>&quot;foo&quot;</span>,<span class='string'>&quot;baz&quot;</span>], <span class='op'>|</span> _ <span class='op'>|</span> {}); <span class='comment'>// -&gt; vec![&quot;bar&quot;, &quot;baz&quot;]</span></pre>
+</div><h4 id='method.exec' class='method'><code>fn <a href='#method.exec' class='fnname'>exec</a>&lt;'b&gt;(&amp;mut self, cmd: &amp;'b <a href='https://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>)</code></h4>
+<div class='docblock'><p>Calls the execute callback registered with a command specified by <code>cmd</code></p>
+<pre class='rust rust-example-rendered'>
+<span class='ident'>cli</span>.<span class='ident'>register</span>(<span class='macro'>vec</span><span class='macro'>!</span>[<span class='string'>&quot;foo&quot;</span>], <span class='op'>|</span> <span class='ident'>args</span> <span class='op'>|</span> { <span class='macro'>println</span><span class='macro'>!</span>(<span class='string'>&quot;called with: {:?}&quot;</span>, <span class='ident'>args</span>); });
+<span class='ident'>cli</span>.<span class='ident'>exec</span>(<span class='string'>&quot;foo&quot;</span>);</pre>
+</div></div></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../";
+        window.currentCrate = "cline";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../jquery.js"></script>
+    <script src="../main.js"></script>
+    
+    <script async src="../search-index.js"></script>
+</body>
+</html>

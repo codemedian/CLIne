@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["Direction",""],["Key",""]],"fn":[["cline_run","Helper function that emulates linux terminal behaviour for command completion based on the commands registered with the `Cli`  struct passed to the function. Can be exited with Ctrl + c"]],"struct":[["Cli","Opaque struct holding the registered Commands"]]});
