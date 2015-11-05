@@ -1,11 +1,25 @@
 language: rust
+env:
+  global:
+  - secure: IysU5M+6FalagDhXAVofZ+3rqTLeiUZegl+QtaH8iizU3ZRRUv3I9MMC9nZJqeEVzo55L1KO7nZJbgV3y59nQ3Rlu2QSAfRBjqdshI0Ck9m2h+4AvDO86ddYtUz8FQ86PvopnY572ism6G/y3hQ72U5X6UBjWaRnZTcsSJhUCHK/+rfpHTwS0c0A39rZCRdpUSRjHm/X5sWxKkqZZ1BP7f0WZ3nhxcNV8aEJXi6FC2L5M4XMWZc4FgW3FvVjhYr9SoKg+FY5kzqb22KrT3LA25QR1WyxsoUZxlrguMP2tvlN7VEHMi9WunDUnnhsndhIMceQCydm4oS2fHe81XMsLml62qmjhjlNK6VwaeplPIVWAk9g8Upg/XhKfNQR5/SgCt4cM0zXadj6KVPPJKL26O5OrFE2Z0LB1KVzL15mVTQM/CZzLxV5VpNoVshMD+O5nCSv1JnsVOwASBCcc8GflFkZha0qeNz8RTMqPO36+aEeuDnsLoPRAe7/BG9dH726g7ennzc20yigD14dRBjURtl5BXV2z+sCE+zZcD8NxlQCxipHslF3KeA9C31pv6op/XfyT8ZnbxQN9PdweTn2y8hrMc8Mo/yB5b1p8C5j+gS4hrO2Vval+ycnJR97b3RagULN91XjnruzGi+cCW0RcHXsFngLxPPA6IGvdgJ9syg=
+  - secure: fk/936NfYonUJx8RN1DASLFiElnl1uiKXwosv07hzC/auwsOcJZNnYbjLm8lxbOllETu5kAyFrl6mXDpf6Ck90oFJWDPOJXveoxS3Rs0FIusKJnMcIsl0xWLBQP+WRN0lEyheOD8vns0nnY0bKSU5y40PXx6UXymdkCBBiAdgICIli9InPhdZF3W2AwloqvrWg7q9CVnb033GrQPWFhBWxYfi5Z656urQdfLZ4eNlgyjGkkstHow2KJRHogJQ7bGhkiP9mpqEKGxdeJx0XOZ6QvgZJPXlMNv9XqlpJ1u8YEhpKVNzZM+0aq6SIOOP/T50HRWq1VJ0hiIvLFH1jlrXOJMFuZjg8paT11mq5YnekdpCb47lH5PhF+aZ5YAx8QC4Dx9rPVLHmVVEnKKr+sUWlnKsti6uUF3N7B+v2K5pCuGQ9+h/Hf6HT4hWoSi2mCmG5oqGN+n7YssDSX0hTU7Cg3baVAoQ4Xy4/X5J6hpAHpg/kAA8Qjqh4uFMoGP/mQrj1Skwjy+GdESlaTT9DwTAdnfTk/22+re/A2Fl1/G3kRNCmO9moGliFZZwdVUZ+Aw5Y7YJcfaFC9vwwZevp2cPZnf9EnDFUXf0q83GF+idvsfoAr9tQaq58/573d7D4sRpep6KtgDP1bCde1XWKD172SIGhVpd/ROmJbYmmBqY7U=
 rust:
-  - stable
-  - beta
-  - nightly
+- stable
+- beta
+- nightly
 matrix:
   allow_failures:
-    - rust: nightly
+  - rust: nightly
 after_success:
-    - test $TRAVIS_PULL_REQUEST == "false" && test $TRAVIS_BRANCH == "master" && cargo publish --token $CARGO_TOKEN
-
+     - |
+        [ $TRAVIS_BRANCH = master ] &&
+        [ $TRAVIS_PULL_REQUEST = false ] &&
+        cargo doc &&
+        echo '<meta http-equiv=refresh content=0;url=cpal/index.html>' > target/doc/index.html &&
+        sudo pip install ghp-import &&
+        ghp-import -n target/doc &&
+        git push -fq https://${GH_TOKEN}@github.com/${TRAVIS_REPO_SLUG}.git gh-pages
+    - |
+        [ $TRAVIS_BRANCH = master ] &&
+        [ $TRAVIS_PULL_REQUEST = false ] &&
+        cargo publish --token ${CRATESIO_TOKEN}
