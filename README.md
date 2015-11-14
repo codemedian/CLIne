@@ -20,7 +20,7 @@ fn main() {
 ```
 
 ## Contributors
-* [chsitter](https://github.com/chsitter/)
+* [Christoph Sitter](https://github.com/chsitter/)
 
 ## License
 Copyright © 2015 Christoph Sitter
